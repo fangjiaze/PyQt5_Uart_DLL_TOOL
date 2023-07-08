@@ -163,7 +163,14 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         while self.port_state:
             try:
                 temp_num = self.serial.inWaiting()
-                if temp_num > 0:
+
+                if temp_num == 0 :
+                    continue
+
+                if num != temp_num :
+                    num = temp_num
+                    time.sleep(0.005)
+                else :
                     data = self.serial.read(num)
                     num = len(data)
 
@@ -173,7 +180,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                         self.TextEdit_log.insertPlainText(f"[{timestamp} , len:{num}]".format(timestamp, num))
                     else :
                         # self.TextEdit_log.insertPlainText("[" + "rec len:" + str(num) + "]")
-                        self.TextEdit_log.insertPlainText(f"[rec len: { num }]".format(num))
+                        self.TextEdit_log.insertPlainText(f"[ rec len: { num }]".format(num))
 
                     if self.checkBox_showhex.isChecked():
                         out_s = ''
