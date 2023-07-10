@@ -69,7 +69,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.dll = None
         self.my2_pyqt_form = None
 
-        self.refer_uart_data = ''
+        self.refer_uart_data = b''
 
     def closeEvent(self, event): # 关闭窗口处理
 
@@ -177,10 +177,10 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                     if self.checkBox_showtime.isChecked():
                         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                         # self.TextEdit_log.insertPlainText("[" + timestamp + ",len:" + str(num) + "]")
-                        self.TextEdit_log.insertPlainText(f"[{timestamp} , len:{num}]".format(timestamp, num))
+                        self.TextEdit_log.insertPlainText(f"<{timestamp} , len:{num}>".format(timestamp, num))
                     else :
                         # self.TextEdit_log.insertPlainText("[" + "rec len:" + str(num) + "]")
-                        self.TextEdit_log.insertPlainText(f"[ rec len: { num }]".format(num))
+                        self.TextEdit_log.insertPlainText(f"< rec len: { num }>".format(num))
 
                     if self.checkBox_showhex.isChecked():
                         out_s = ''
@@ -256,7 +256,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             # self.dll_thread = threading.Thread(target=self.dll_thread_pro)
             # self.dll_thread.start()
             self.dll_thread_pro()
-            self.refer_uart_data = ''
+            self.refer_uart_data = b''
 
             # self.my2_pyqt_form = cp05_protocol_tool_form()
             # self.my2_pyqt_form.show()
@@ -265,7 +265,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.dll = None
             self.pushButton_open_dll.setText(("启动dll"))
             self.lineEdit_dll.setEnabled(True)
-            self.refer_uart_data = ''
+            self.refer_uart_data = b''
             # self.my2_pyqt_form.close()
 
             # self.free_dll_work_and_data()
@@ -315,65 +315,76 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         if self.dll is None :
             return
 
-        self.refer_uart_data += data.decode('utf-8') #将字节数据解码成py字符串数据
+        self.refer_uart_data += data #将字节数据解码成py字符串数据
         c_str_data = C.string_at(self.refer_uart_data, len(self.refer_uart_data))#将py字符串数据转换成ctype类型的字符串
         param = dll_param_class() # 创建结构体对象
+        param.ack_data_hex_flag = 2 # 初始化2 ，默认未置位
+        param.out_data_hex_flag = 2 # 初始化2 ，默认未置位
         readed_len = self.dll.dll_refer_data(c_str_data, C.c_uint32(data_len), C.addressof(param)) #执行dll函数
 
+
+
+
+        try :
+            ack_data_p = C.cast(param.ack_data, C.POINTER(C.c_byte)) #获取ctype的数组的指针
+            ack_data_string = C.string_at(ack_data_p, param.ack_len) #指针转换成py字符串
+            # str = lc_pylib.remove_null_character(ack_data_string.decode())
+            # sdata = ack_data_string.decode()
+            if(param.ack_data_hex_flag == 1) :
+                sdata = ''.join(lc_pylib.lc_hex_print(ack_data_string))
+                self.TextEdit_log.insertPlainText("[ sent ack ]" + sdata + "\r\n")
+            elif param.ack_data_hex_flag == 0:
+                sdata = ack_data_string.decode()
+                print(sdata)
+                self.TextEdit_log.insertPlainText("[ sent ack ]" + sdata + "\r\n")
+            else :
+                pass
+            if param.ack_data_hex_flag != 2 :
+                self.serial.write(ack_data_string)
+        except :
+            print("error 1")
+            pass
 
         try :
             log_print_data_p = C.cast(param.log_print_data, C.POINTER(C.c_byte))  # 获取ctype的数组的指针
             log_print_data_string = C.string_at(log_print_data_p, 512) #指针转换成py字符串
             sdata = lc_pylib.remove_null_character(log_print_data_string.decode())
-            print(sdata)
-            self.TextEdit_log.insertPlainText("\r\n[dll refer]" + sdata)
-        except :
-            pass
-
-        try :
-            ack_data_p = C.cast(param.ack_data, C.POINTER(C.c_byte)) #获取ctype的数组的指针
-            ack_data_string = C.string_at(ack_data_p, param.ack_len.value) #指针转换成py字符串
-            # str = lc_pylib.remove_null_character(ack_data_string.decode())
-            sdata = ack_data_string.decode()
-            if(param.ack_data_hex_flag.value) :
-                sdata = lc_pylib.lc_str2hex_print(data)
-                self.TextEdit_log.insertPlainText("\r\n[sent ack]" + sdata)
-            else :
+            if sdata != '' :
                 print(sdata)
-                self.TextEdit_log.insertPlainText("\r\n[sent ack]" + sdata)
-            self.serial.write(sdata.encode())
+                self.TextEdit_log.insertPlainText("\r\n[dll refer]" + sdata + "\r\n")
         except :
+            print("error 2")
             pass
 
         try :
             out_data_p = C.cast(param.out_data, C.POINTER(C.c_byte)) #获取ctype的数组的指针
-            out_data_string = C.string_at(out_data_p, param.out_len.value)  # 指针转换成py字符串
-            sdata = out_data_string.decode()
-            if (param.out_data_hex_flag.value):
-                lc_pylib.lc_str2hex_print(sdata)
-                self.TextEdit_log.insertPlainText("\r\n[sent response]" + sdata)
-            else:
+            out_data_string = C.string_at(out_data_p, param.out_len)  # 指针转换成py字符串
+            # sdata = out_data_string.decode()
+            if (param.out_data_hex_flag == 1):
+                sdata = ''.join(lc_pylib.lc_hex_print(out_data_string))
+                self.TextEdit_log.insertPlainText("[ sent response ]" + sdata + "\r\n")
+            elif param.out_data_hex_flag == 0:
+                sdata = out_data_string.decode()
                 print(sdata)
-                self.TextEdit_log.insertPlainText("\r\n[sent response]" + sdata)
-            self.serial.write(sdata.encode())
+                self.TextEdit_log.insertPlainText("[ sent response ]" + sdata + "\r\n")
+            else :
+                pass
+            if param.out_data_hex_flag != 2:
+                self.serial.write(out_data_string)
         except :
+            print("error 3")
             pass
 
 
-
-        self.refer_uart_data = self.refer_uart_data[readed_len : ]
-
-
-
-
+        if readed_len <= len(self.refer_uart_data) :
+            self.refer_uart_data = self.refer_uart_data[readed_len : ]
+        else :
+            self.refer_uart_data = b''
 
 
 
-    # def free_dll_work_and_data(self):
-    #     if self.dll:
-    #         self.dll.dll_stop()
-    #         self.dll = None
-    #
-    #     if self.dll_thread :
-    #         self.dll_thread.join()
-    #         self.dll_thread = None
+
+
+
+
+
