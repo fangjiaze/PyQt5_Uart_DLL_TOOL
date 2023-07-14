@@ -63,6 +63,23 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.pushButton_open_dll.clicked.connect(self.open_dll_pro)
 
 
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit, self.checkBox_cmd_hex_flag, self.checkBox_cmd_enter_flag))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_2, self.checkBox_cmd_hex_flag_2, self.checkBox_cmd_enter_flag_2))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_3, self.checkBox_cmd_hex_flag_3, self.checkBox_cmd_enter_flag_3))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_4, self.checkBox_cmd_hex_flag_4, self.checkBox_cmd_enter_flag_4))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_5, self.checkBox_cmd_hex_flag_5, self.checkBox_cmd_enter_flag_5))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_6, self.checkBox_cmd_hex_flag_6, self.checkBox_cmd_enter_flag_6))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_7, self.checkBox_cmd_hex_flag_7, self.checkBox_cmd_enter_flag_7))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_8, self.checkBox_cmd_hex_flag_8, self.checkBox_cmd_enter_flag_8))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_9, self.checkBox_cmd_hex_flag_9, self.checkBox_cmd_enter_flag_9))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_10, self.checkBox_cmd_hex_flag_10, self.checkBox_cmd_enter_flag_10))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_11, self.checkBox_cmd_hex_flag_11, self.checkBox_cmd_enter_flag_11))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_12, self.checkBox_cmd_hex_flag_12, self.checkBox_cmd_enter_flag_12))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_13, self.checkBox_cmd_hex_flag_13, self.checkBox_cmd_enter_flag_13))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_14, self.checkBox_cmd_hex_flag_14, self.checkBox_cmd_enter_flag_14))
+        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_15, self.checkBox_cmd_hex_flag_15, self.checkBox_cmd_enter_flag_15))
+
+
         self.serial = None
         self.receive_thread = None
         self.dll_thread = None
@@ -234,6 +251,37 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                 except :
                     pass
                 # self.data_num_sended += num
+        else:
+            pass
+
+    def sent_uart_cmd(self, textedit, checkbox_hex, checkbox_rn) :
+        if self.serial and self.port_state :
+            input_s = textedit.text()
+            if input_s != "":
+                # 非空字符串
+                if checkbox_hex.isChecked():
+                    # hex发送
+                    input_s = input_s.strip()
+                    send_list = []
+                    while input_s != '':
+                        try:
+                            num = int(input_s[0:2], 16)
+                        except ValueError:
+                            QMessageBox.critical(self, 'wrong data', '请输入十六进制数据，以空格分开!')
+                            return None
+                        input_s = input_s[2:].strip()
+                        send_list.append(num)
+                    input_s = bytes(send_list)
+                else:
+                    # ascii发送
+                    if checkbox_rn.isChecked() :
+                        input_s = (input_s + '\r\n').encode('utf-8')
+                    else :
+                        input_s = (input_s).encode('utf-8')
+                try :
+                    num = self.serial.write(input_s)
+                except :
+                    pass
         else:
             pass
 
