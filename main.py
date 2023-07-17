@@ -6,6 +6,7 @@ import serial.tools.list_ports
 # import fjz_timer
 
 
+
 import sys
 from PyQt5 import QtWidgets
 from MyPyQT_Form import MyPyQT_Form
@@ -30,6 +31,7 @@ if __name__ == '__main__' :
     app = QtWidgets.QApplication(sys.argv)
     my_pyqt_form = MyPyQT_Form()
     my_pyqt_form.show()
+
     # Ui_Form.setupUi()
     sys.exit(app.exec_())
 

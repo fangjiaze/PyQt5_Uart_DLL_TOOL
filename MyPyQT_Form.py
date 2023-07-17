@@ -6,7 +6,10 @@ import threading
 import serial.tools.list_ports
 import fjz_timer
 import ctypes as C
+
+
 import lc_pylib
+import sys_f_json_cfg
 
 import sys
 from PyQt5 import QtWidgets
@@ -80,6 +83,11 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_15, self.checkBox_cmd_hex_flag_15, self.checkBox_cmd_enter_flag_15))
 
 
+
+
+        self.sys_fjs_cfg_open_init()
+
+
         self.serial = None
         self.receive_thread = None
         self.dll_thread = None
@@ -87,6 +95,11 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.my2_pyqt_form = None
 
         self.refer_uart_data = b''
+
+        # self.my2_pyqt_form = cp05_protocol_tool_form()
+        # self.my2_pyqt_form.show()
+
+
 
     def closeEvent(self, event): # 关闭窗口处理
 
@@ -102,6 +115,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.fjz_timer_obj.stop()
             self.port_state = False
             self.close_com()
+            self.sys_fjs_cfg_close_pro()
+            self.my2_pyqt_form.close()
         else:
             event.ignore()
 
@@ -306,14 +321,17 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.dll_thread_pro()
             self.refer_uart_data = b''
 
-            # self.my2_pyqt_form = cp05_protocol_tool_form()
-            # self.my2_pyqt_form.show()
+            self.my2_pyqt_form = cp05_protocol_tool_form()
+            self.my2_pyqt_form.show()
 
         else :
             self.dll = None
             self.pushButton_open_dll.setText(("启动dll"))
             self.lineEdit_dll.setEnabled(True)
             self.refer_uart_data = b''
+
+            self.my2_pyqt_form.close()
+            self.my2_pyqt_form = None
             # self.my2_pyqt_form.close()
 
             # self.free_dll_work_and_data()
@@ -428,6 +446,149 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.refer_uart_data = self.refer_uart_data[readed_len : ]
         else :
             self.refer_uart_data = b''
+
+
+    def sys_fjs_cfg_open_init(self):
+
+        self.sys_js_config = sys_f_json_cfg.sys_fjson_cfg()
+
+        if self.sys_js_config.data["cmd_cfg"][0]["hex"] == 1:
+            self.checkBox_cmd_hex_flag.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][1]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_2.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][2]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_3.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][3]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_4.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][4]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_5.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][5]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_6.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][6]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_7.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][7]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_8.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][8]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_9.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][9]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_10.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][10]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_11.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][11]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_12.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][12]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_13.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][13]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_14.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][14]["hex"] == 1:
+            self.checkBox_cmd_hex_flag_15.setChecked(True)
+
+
+        if self.sys_js_config.data["cmd_cfg"][0]["enter"] == 1:
+            self.checkBox_cmd_enter_flag.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][1]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_2.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][2]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_3.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][3]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_4.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][4]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_5.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][5]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_6.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][6]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_7.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][7]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_8.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][8]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_9.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][9]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_10.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][10]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_11.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][11]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_12.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][12]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_13.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][13]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_14.setChecked(True)
+        if self.sys_js_config.data["cmd_cfg"][14]["enter"] == 1:
+            self.checkBox_cmd_enter_flag_15.setChecked(True)
+
+
+        self.cmd_edit.setText(self.sys_js_config.data["cmd_cfg"][0]["data"])
+        self.cmd_edit_2.setText(self.sys_js_config.data["cmd_cfg"][1]["data"])
+        self.cmd_edit_3.setText(self.sys_js_config.data["cmd_cfg"][2]["data"])
+        self.cmd_edit_4.setText(self.sys_js_config.data["cmd_cfg"][3]["data"])
+        self.cmd_edit_5.setText(self.sys_js_config.data["cmd_cfg"][4]["data"])
+        self.cmd_edit_6.setText(self.sys_js_config.data["cmd_cfg"][5]["data"])
+        self.cmd_edit_7.setText(self.sys_js_config.data["cmd_cfg"][6]["data"])
+        self.cmd_edit_8.setText(self.sys_js_config.data["cmd_cfg"][7]["data"])
+        self.cmd_edit_9.setText(self.sys_js_config.data["cmd_cfg"][8]["data"])
+        self.cmd_edit_10.setText(self.sys_js_config.data["cmd_cfg"][9]["data"])
+        self.cmd_edit_11.setText(self.sys_js_config.data["cmd_cfg"][10]["data"])
+        self.cmd_edit_12.setText(self.sys_js_config.data["cmd_cfg"][11]["data"])
+        self.cmd_edit_13.setText(self.sys_js_config.data["cmd_cfg"][12]["data"])
+        self.cmd_edit_14.setText(self.sys_js_config.data["cmd_cfg"][13]["data"])
+        self.cmd_edit_15.setText(self.sys_js_config.data["cmd_cfg"][14]["data"])
+
+
+
+        
+    def sys_fjs_cfg_close_pro(self):
+
+        self.sys_js_config.data["cmd_cfg"][0]["hex"] = 1 if self.checkBox_cmd_hex_flag.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][1]["hex"] = 1 if self.checkBox_cmd_hex_flag_2.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][2]["hex"] = 1 if self.checkBox_cmd_hex_flag_3.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][3]["hex"] = 1 if self.checkBox_cmd_hex_flag_4.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][4]["hex"] = 1 if self.checkBox_cmd_hex_flag_5.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][5]["hex"] = 1 if self.checkBox_cmd_hex_flag_6.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][6]["hex"] = 1 if self.checkBox_cmd_hex_flag_7.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][7]["hex"] = 1 if self.checkBox_cmd_hex_flag_8.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][8]["hex"] = 1 if self.checkBox_cmd_hex_flag_9.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][9]["hex"] = 1 if self.checkBox_cmd_hex_flag_10.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][10]["hex"] = 1 if self.checkBox_cmd_hex_flag_11.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][11]["hex"] = 1 if self.checkBox_cmd_hex_flag_12.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][12]["hex"] = 1 if self.checkBox_cmd_hex_flag_13.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][13]["hex"] = 1 if self.checkBox_cmd_hex_flag_14.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][14]["hex"] = 1 if self.checkBox_cmd_hex_flag_15.isChecked() else 0
+
+
+        self.sys_js_config.data["cmd_cfg"][0]["enter"] = 1 if self.checkBox_cmd_enter_flag.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][1]["enter"] = 1 if self.checkBox_cmd_enter_flag_2.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][2]["enter"] = 1 if self.checkBox_cmd_enter_flag_3.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][3]["enter"] = 1 if self.checkBox_cmd_enter_flag_4.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][4]["enter"] = 1 if self.checkBox_cmd_enter_flag_5.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][5]["enter"] = 1 if self.checkBox_cmd_enter_flag_6.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][6]["enter"] = 1 if self.checkBox_cmd_enter_flag_7.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][7]["enter"] = 1 if self.checkBox_cmd_enter_flag_8.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][8]["enter"] = 1 if self.checkBox_cmd_enter_flag_9.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][9]["enter"] = 1 if self.checkBox_cmd_enter_flag_10.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][10]["enter"] = 1 if self.checkBox_cmd_enter_flag_11.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][11]["enter"] = 1 if self.checkBox_cmd_enter_flag_12.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][12]["enter"] = 1 if self.checkBox_cmd_enter_flag_13.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][13]["enter"] = 1 if self.checkBox_cmd_enter_flag_14.isChecked() else 0
+        self.sys_js_config.data["cmd_cfg"][14]["enter"] = 1 if self.checkBox_cmd_enter_flag_15.isChecked() else 0
+
+
+        self.sys_js_config.data["cmd_cfg"][0]["data"] = self.cmd_edit.text()
+        self.sys_js_config.data["cmd_cfg"][1]["data"] = self.cmd_edit_2.text()
+        self.sys_js_config.data["cmd_cfg"][2]["data"] = self.cmd_edit_3.text()
+        self.sys_js_config.data["cmd_cfg"][3]["data"] = self.cmd_edit_4.text()
+        self.sys_js_config.data["cmd_cfg"][4]["data"] = self.cmd_edit_5.text()
+        self.sys_js_config.data["cmd_cfg"][5]["data"] = self.cmd_edit_6.text()
+        self.sys_js_config.data["cmd_cfg"][6]["data"] = self.cmd_edit_7.text()
+        self.sys_js_config.data["cmd_cfg"][7]["data"] = self.cmd_edit_8.text()
+        self.sys_js_config.data["cmd_cfg"][8]["data"] = self.cmd_edit_9.text()
+        self.sys_js_config.data["cmd_cfg"][9]["data"] = self.cmd_edit_10.text()
+        self.sys_js_config.data["cmd_cfg"][10]["data"] = self.cmd_edit_11.text()
+        self.sys_js_config.data["cmd_cfg"][11]["data"] = self.cmd_edit_12.text()
+        self.sys_js_config.data["cmd_cfg"][12]["data"] = self.cmd_edit_13.text()
+        self.sys_js_config.data["cmd_cfg"][13]["data"] = self.cmd_edit_14.text()
+        self.sys_js_config.data["cmd_cfg"][14]["data"] = self.cmd_edit_15.text()
+
+
+        self.sys_js_config.sys_fjs_cfg_update()
 
 
 

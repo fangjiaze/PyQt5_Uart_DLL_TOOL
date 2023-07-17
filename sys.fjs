@@ -3,13 +3,13 @@
         {
             "n": 1,
             "data": "",
-            "hex": 0,
+            "hex": 1,
             "enter": 0,
             "button": "1"
         },
         {
             "n": 2,
-            "data": "",
+            "data": "asdasd",
             "hex": 0,
             "enter": 0,
             "button": "2"
@@ -23,7 +23,7 @@
         },
         {
             "n": 4,
-            "data": "",
+            "data": "asdas",
             "hex": 0,
             "enter": 0,
             "button": "4"
