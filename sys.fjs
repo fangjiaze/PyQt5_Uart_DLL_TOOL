@@ -1,0 +1,109 @@
+{
+    "cmd_cfg": [
+        {
+            "n": 1,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "1"
+        },
+        {
+            "n": 2,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "2"
+        },
+        {
+            "n": 3,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "3"
+        },
+        {
+            "n": 4,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "4"
+        },
+        {
+            "n": 5,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "5"
+        },
+        {
+            "n": 6,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "6"
+        },
+        {
+            "n": 7,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "7"
+        },
+        {
+            "n": 8,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "8"
+        },
+        {
+            "n": 9,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "9"
+        },
+        {
+            "n": 10,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "10"
+        },
+        {
+            "n": 11,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "11"
+        },
+        {
+            "n": 12,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "12"
+        },
+        {
+            "n": 13,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "13"
+        },
+        {
+            "n": 14,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "14"
+        },
+        {
+            "n": 15,
+            "data": "",
+            "hex": 0,
+            "enter": 0,
+            "button": "15"
+        }
+    ]
+}
