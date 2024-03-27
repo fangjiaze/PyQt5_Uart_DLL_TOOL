@@ -13,6 +13,7 @@ from MyPyQT_Form import MyPyQT_Form
 # from lc_uart_test_tool import Ui_Form
 import ctypes as C
 
+# from lc_pylib import crc_16
 
 
 
@@ -26,6 +27,9 @@ if __name__ == '__main__' :
     # for func in functions:
     #     print(func.__name__)
     # dll.HelloWorld()
+
+
+    # print(crc_16(0xffff, b'\x01\x02\x07'))
 
 
     app = QtWidgets.QApplication(sys.argv)

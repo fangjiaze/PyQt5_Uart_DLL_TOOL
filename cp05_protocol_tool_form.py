@@ -3,18 +3,16 @@ from PyQt5 import QtWidgets
 import json
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 
+
+
 class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
-    def __init__(self):
+    def __init__(self, ui_obj, protocol):
         super(cp05_protocol_tool_form, self).__init__()
         self.setupUi(self)
 
-        self.json_str = """{
-            "map":[
-                {"n":2,"param1":"string1data1","param2":"string1data2","button":"ctr1","callback":"abc"},
-                {"n":1,"param1":"string2data1","button":"ctr2","callback":"abc"},
-                {"n":3,"param1":"string3data1","param2":"string3data2","param3":"string3data3","button":"ctr3","callback":"abc"}
-            ]
-        }"""
+        self.json_str = protocol.json_str
+        self.protocol_cb = protocol.protocol_fuction
+        self.ui_obj = ui_obj # 为了提供串口发送接口给该线程
 
         self.line_edit_map = []
 
@@ -59,7 +57,7 @@ class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
         if "map" not in json_obj:
             return False
         for obj in json_obj["map"]:
-            if "n" not in obj or "button" not in obj or "callback" not in obj:
+            if "n" not in obj or "button" not in obj :
                 return False
             for i in range(1, obj["n"] + 1):
                 if f"param{i}" not in obj:
@@ -69,5 +67,13 @@ class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
     def callback(self, index):
         # global line_edit_map
         line_edits = self.line_edit_map[index]
+
+
         for line_edit in line_edits:
             print(line_edit.text())
+
+        self.protocol_cb(self.ui_obj, index, line_edits)
+
+
+
+    

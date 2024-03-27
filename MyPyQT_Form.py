@@ -96,7 +96,9 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
         self.refer_uart_data = b''
 
-        self.my2_pyqt_form = cp05_protocol_tool_form()
+        import CT67_protocol_module
+
+        self.my2_pyqt_form = cp05_protocol_tool_form(self, CT67_protocol_module)
         self.my2_pyqt_form.show()
 
 
@@ -240,6 +242,27 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                 break
             except UnicodeDecodeError :
                 pass
+    
+
+    def send_uart_data(self, hex_print_flag, bytes_data):
+        if self.serial and self.port_state :
+            try:
+                self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End) # 光标置末尾。
+                if self.checkBox_showtime.isChecked():
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
+                    self.TextEdit_log.insertPlainText(f"[{timestamp} ,send len:{len(bytes_data)}]".format(timestamp, len(bytes_data)))
+                else :
+                    self.TextEdit_log.insertPlainText(f"[ send len: {len(bytes_data)}]".format(len(bytes_data)))
+                if hex_print_flag:
+                    # hex打印
+                    self.TextEdit_log.insertPlainText(lc_pylib.lc_hex_print(bytes_data) + '\r\n')
+                else:
+                    # ascii打印
+                    self.TextEdit_log.insertPlainText(bytes_data.decode('utf-8') + '\r\n')
+                self.serial.write(bytes_data)
+            except Exception as e:
+                print("发生异常：" + e)
+
 
     def send_data(self): # 发送数据
         if self.serial and self.port_state :
@@ -325,8 +348,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.dll_thread_pro()
             self.refer_uart_data = b''
 
-            self.my2_pyqt_form = cp05_protocol_tool_form()
-            self.my2_pyqt_form.show()
+            # self.my2_pyqt_form = cp05_protocol_tool_form()
+            # self.my2_pyqt_form.show()
 
         else :
             self.dll = None
