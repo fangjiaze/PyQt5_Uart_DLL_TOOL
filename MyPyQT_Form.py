@@ -67,20 +67,20 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
 
         self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit, self.checkBox_cmd_hex_flag, self.checkBox_cmd_enter_flag))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_2, self.checkBox_cmd_hex_flag_2, self.checkBox_cmd_enter_flag_2))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_3, self.checkBox_cmd_hex_flag_3, self.checkBox_cmd_enter_flag_3))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_4, self.checkBox_cmd_hex_flag_4, self.checkBox_cmd_enter_flag_4))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_5, self.checkBox_cmd_hex_flag_5, self.checkBox_cmd_enter_flag_5))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_6, self.checkBox_cmd_hex_flag_6, self.checkBox_cmd_enter_flag_6))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_7, self.checkBox_cmd_hex_flag_7, self.checkBox_cmd_enter_flag_7))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_8, self.checkBox_cmd_hex_flag_8, self.checkBox_cmd_enter_flag_8))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_9, self.checkBox_cmd_hex_flag_9, self.checkBox_cmd_enter_flag_9))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_10, self.checkBox_cmd_hex_flag_10, self.checkBox_cmd_enter_flag_10))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_11, self.checkBox_cmd_hex_flag_11, self.checkBox_cmd_enter_flag_11))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_12, self.checkBox_cmd_hex_flag_12, self.checkBox_cmd_enter_flag_12))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_13, self.checkBox_cmd_hex_flag_13, self.checkBox_cmd_enter_flag_13))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_14, self.checkBox_cmd_hex_flag_14, self.checkBox_cmd_enter_flag_14))
-        self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_15, self.checkBox_cmd_hex_flag_15, self.checkBox_cmd_enter_flag_15))
+        self.pushButton_cmd_sent_2.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_2, self.checkBox_cmd_hex_flag_2, self.checkBox_cmd_enter_flag_2))
+        self.pushButton_cmd_sent_3.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_3, self.checkBox_cmd_hex_flag_3, self.checkBox_cmd_enter_flag_3))
+        self.pushButton_cmd_sent_4.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_4, self.checkBox_cmd_hex_flag_4, self.checkBox_cmd_enter_flag_4))
+        self.pushButton_cmd_sent_5.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_5, self.checkBox_cmd_hex_flag_5, self.checkBox_cmd_enter_flag_5))
+        self.pushButton_cmd_sent_6.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_6, self.checkBox_cmd_hex_flag_6, self.checkBox_cmd_enter_flag_6))
+        self.pushButton_cmd_sent_7.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_7, self.checkBox_cmd_hex_flag_7, self.checkBox_cmd_enter_flag_7))
+        self.pushButton_cmd_sent_8.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_8, self.checkBox_cmd_hex_flag_8, self.checkBox_cmd_enter_flag_8))
+        self.pushButton_cmd_sent_9.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_9, self.checkBox_cmd_hex_flag_9, self.checkBox_cmd_enter_flag_9))
+        self.pushButton_cmd_sent_10.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_10, self.checkBox_cmd_hex_flag_10, self.checkBox_cmd_enter_flag_10))
+        self.pushButton_cmd_sent_11.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_11, self.checkBox_cmd_hex_flag_11, self.checkBox_cmd_enter_flag_11))
+        self.pushButton_cmd_sent_12.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_12, self.checkBox_cmd_hex_flag_12, self.checkBox_cmd_enter_flag_12))
+        self.pushButton_cmd_sent_13.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_13, self.checkBox_cmd_hex_flag_13, self.checkBox_cmd_enter_flag_13))
+        self.pushButton_cmd_sent_14.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_14, self.checkBox_cmd_hex_flag_14, self.checkBox_cmd_enter_flag_14))
+        self.pushButton_cmd_sent_15.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_15, self.checkBox_cmd_hex_flag_15, self.checkBox_cmd_enter_flag_15))
 
 
 
@@ -96,8 +96,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
         self.refer_uart_data = b''
 
-        # self.my2_pyqt_form = cp05_protocol_tool_form()
-        # self.my2_pyqt_form.show()
+        self.my2_pyqt_form = cp05_protocol_tool_form()
+        self.my2_pyqt_form.show()
 
 
 
@@ -116,7 +116,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.port_state = False
             self.close_com()
             self.sys_fjs_cfg_close_pro()
-            self.my2_pyqt_form.close()
+            if self.my2_pyqt_form is not None :
+                self.my2_pyqt_form.close()
         else:
             event.ignore()
 
@@ -201,11 +202,11 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
                 if num != temp_num :
                     num = temp_num
-                    time.sleep(0.005)
+                    time.sleep(0.01)
                 else :
                     data = self.serial.read(num)
                     num = len(data)
-
+                    self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End) # 光标置末尾。
                     if self.checkBox_showtime.isChecked():
                         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                         # self.TextEdit_log.insertPlainText("[" + timestamp + ",len:" + str(num) + "]")
@@ -222,7 +223,10 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                         self.TextEdit_log.insertPlainText(out_s)
                     else :
                         # 串口接收到的字符串为b'123',要转化成unicode字符串才能输出到窗口中去
+
                         self.TextEdit_log.insertPlainText(data.decode('utf-8') + '\r\n')
+                        #self.TextEdit_log.append(data.decode('utf-8'))
+
 
 
                     self.dll_refer_rec_uart_data(data, num)
