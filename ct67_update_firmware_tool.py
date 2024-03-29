@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_update_Form(object):
     def setupUi(self, update_Form):
-        update_Form.setObjectName("update_Form")
+        update_Form.setObjectName("CT67-乐畅&创品固件升級")
         update_Form.resize(400, 242)
         self.gridLayoutWidget = QtWidgets.QWidget(update_Form)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 381, 141))
@@ -32,7 +32,7 @@ class Ui_update_Form(object):
         self.gridLayout.addWidget(self.path_lineedit, 0, 0, 1, 1)
         self.progressBar = QtWidgets.QProgressBar(update_Form)
         self.progressBar.setGeometry(QtCore.QRect(20, 200, 361, 21))
-        self.progressBar.setProperty("value", 24)
+        # self.progressBar.setProperty("value", 24)
         self.progressBar.setObjectName("progressBar")
 
         self.retranslateUi(update_Form)

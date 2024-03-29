@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets
 import json
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 
+from CT67_protocol_module import CT67_protocol_module
 
 
 class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
@@ -10,13 +11,13 @@ class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
         super(cp05_protocol_tool_form, self).__init__()
         self.setupUi(self)
 
-        self.json_str = protocol.json_str
-        self.protocol_cb = protocol.protocol_fuction
-        self.ui_obj = ui_obj # 为了提供串口发送接口给该线程
+        # self.json_str = protocol.json_str
+        self.protocol = CT67_protocol_module(ui_obj)  # CT67 协议模块
+        # self.ui_obj = ui_obj # 为了提供串口发送接口给该线程
 
         self.line_edit_map = []
 
-        json_obj = json.loads(self.json_str)
+        json_obj = json.loads(self.protocol.json_str)
 
         if not self.validate_json(json_obj):
             QMessageBox.critical(None, "Error", "Invalid JSON data")
@@ -72,7 +73,7 @@ class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
         for line_edit in line_edits:
             print(line_edit.text())
 
-        self.protocol_cb(self.ui_obj, index, line_edits)
+        self.protocol.protocol_fuction(index, line_edits)
 
 
 

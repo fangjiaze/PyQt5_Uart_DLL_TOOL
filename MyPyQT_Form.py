@@ -1,4 +1,5 @@
 import ctypes
+import queue
 import tkinter as tk
 import serial
 import time
@@ -96,6 +97,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
         self.refer_uart_data = b''
 
+        self.uart_queue = queue.Queue()
+
         import CT67_protocol_module
 
         self.my2_pyqt_form = cp05_protocol_tool_form(self, CT67_protocol_module)
@@ -173,7 +176,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         data_bits = int(self.comboBox_5.currentText())
         try:
             self.serial = serial.Serial(port, baud_rate, stopbits=stop_bits, parity=parity,
-                                        bytesize=data_bits, timeout=1)
+                                        bytesize=data_bits, timeout=1, write_timeout=0.5)
             if self.serial.is_open :
                 print(self.serial)
         except serial.SerialException:
@@ -182,6 +185,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             return False
 
         self.receive_thread = threading.Thread(target=self.receive_data)
+        self.receive_thread.daemon = True
         self.receive_thread.start()
         return True
 
@@ -196,15 +200,23 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
     def receive_data(self): # 接收处理
         num = 0
         while self.port_state:
+            time.sleep(0.01)
             try:
-                temp_num = self.serial.inWaiting()
+                bytes_data = self.uart_queue.get_nowait()
+                if bytes_data :
+                    self.serial.write(bytes_data)
+            except :
+                pass
 
+            try:
+
+                temp_num = self.serial.inWaiting()
                 if temp_num == 0 :
                     continue
 
                 if num != temp_num :
                     num = temp_num
-                    time.sleep(0.01)
+                    # time.sleep(0.01)
                 else :
                     data = self.serial.read(num)
                     num = len(data)
@@ -242,24 +254,32 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                 break
             except UnicodeDecodeError :
                 pass
-    
+
+
+            
+
+    def send_uart_put_data(self, bytes_data):
+        self.uart_queue.put(bytes_data)
 
     def send_uart_data(self, hex_print_flag, bytes_data):
         if self.serial and self.port_state :
             try:
-                self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End) # 光标置末尾。
-                if self.checkBox_showtime.isChecked():
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
-                    self.TextEdit_log.insertPlainText(f"[{timestamp} ,send len:{len(bytes_data)}]".format(timestamp, len(bytes_data)))
-                else :
-                    self.TextEdit_log.insertPlainText(f"[ send len: {len(bytes_data)}]".format(len(bytes_data)))
-                if hex_print_flag:
-                    # hex打印
-                    self.TextEdit_log.insertPlainText(lc_pylib.lc_hex_print(bytes_data) + '\r\n')
-                else:
-                    # ascii打印
-                    self.TextEdit_log.insertPlainText(bytes_data.decode('utf-8') + '\r\n')
-                self.serial.write(bytes_data)
+                if hex_print_flag != 2 :
+                    self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End) # 光标置末尾。
+                    if self.checkBox_showtime.isChecked():
+                        timestamp = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
+                        self.TextEdit_log.insertPlainText(f"[{timestamp} ,send len:{len(bytes_data)}]".format(timestamp, len(bytes_data)))
+                    else :
+                        self.TextEdit_log.insertPlainText(f"[ send len: {len(bytes_data)}]".format(len(bytes_data)))
+                    if hex_print_flag:
+                        # hex打印
+                        self.TextEdit_log.insertPlainText(lc_pylib.lc_hex_print(bytes_data) + '\r\n')
+                    else:
+                        # ascii打印
+                        self.TextEdit_log.insertPlainText(bytes_data.decode('utf-8') + '\r\n')
+            # self.serial.write(bytes_data)
+            # self.serial.flush()
+                self.send_uart_put_data(bytes_data)
             except Exception as e:
                 print("发生异常：" + e)
 
@@ -289,7 +309,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                     else :
                         input_s = (input_s).encode('utf-8')
                 try :
-                    num = self.serial.write(input_s)
+                    # num = self.serial.write(input_s)
+                    self.send_uart_put_data(input_s)
                 except :
                     pass
                 # self.data_num_sended += num
@@ -321,7 +342,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                     else :
                         input_s = (input_s).encode('utf-8')
                 try :
-                    num = self.serial.write(input_s)
+                    # num = self.serial.write(input_s)
+                    self.send_uart_put_data(input_s)
                 except :
                     pass
         else:
@@ -433,7 +455,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             else :
                 pass
             if param.ack_data_hex_flag != 2 :
-                self.serial.write(ack_data_string)
+                # self.serial.write(ack_data_string)
+                self.send_uart_put_data(ack_data_string)
         except :
             print("error 1")
             pass
@@ -463,7 +486,8 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             else :
                 pass
             if param.out_data_hex_flag != 2:
-                self.serial.write(out_data_string)
+                # self.serial.write(out_data_string)
+                self.send_uart_put_data(out_data_string)
         except :
             print("error 3")
             pass
