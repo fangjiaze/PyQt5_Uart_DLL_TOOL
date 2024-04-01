@@ -5,6 +5,8 @@ import serial
 import time
 import threading
 import serial.tools.list_ports
+from PyQt5.QtCore import pyqtSignal
+
 import fjz_timer
 import ctypes as C
 
@@ -45,6 +47,12 @@ def update_com() :
 
 
 class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
+    debug_print_signal = pyqtSignal(object)
+
+    protocol_output_data_signal = pyqtSignal(object)
+
+    update_response_signal = pyqtSignal(object)
+
     port_state = False
     com_port_list = []
     fjz_timer_obj = None
@@ -60,6 +68,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.comboBox_3.addItems(['1', '1.5', '2'])
         self.comboBox_4.addItems(['None', 'Even', 'Odd'])
         self.comboBox_5.addItems(['8', '7', '6', '5'])
+        self.textEdit.setReadOnly(True)
 
         self.pushButton_clear_log.clicked.connect(self.clear_log)
         self.pushButton_sent_data.clicked.connect(self.send_data)
@@ -82,6 +91,9 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.pushButton_cmd_sent_13.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_13, self.checkBox_cmd_hex_flag_13, self.checkBox_cmd_enter_flag_13))
         self.pushButton_cmd_sent_14.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_14, self.checkBox_cmd_hex_flag_14, self.checkBox_cmd_enter_flag_14))
         self.pushButton_cmd_sent_15.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit_15, self.checkBox_cmd_hex_flag_15, self.checkBox_cmd_enter_flag_15))
+
+
+        self.debug_print_signal.connect(self.debug_print_callback)
 
 
 
@@ -129,6 +141,36 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
     # def __del__(self):
     #     print("stop com update timer")
     #     self.fjz_timer_obj.stop()
+
+    def debug_print_callback(self, data):
+        num = len(data)
+        # self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End)  # 光标置末尾。
+        if self.checkBox_showtime.isChecked():
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            # self.TextEdit_log.insertPlainText("[" + timestamp + ",len:" + str(num) + "]")
+            self.TextEdit_log.insertPlainText(f"<{timestamp} , len:{num}>".format(timestamp, num))
+        else:
+            # self.TextEdit_log.insertPlainText("[" + "rec len:" + str(num) + "]")
+            self.TextEdit_log.insertPlainText(f"< rec len: {num}>".format(num))
+
+        if self.checkBox_showhex.isChecked():
+            out_s = ''
+            for i in range(0, len(data)):
+                out_s = out_s + '{:02X}'.format(data[i]) + ' '
+            out_s += '\r\n'
+            self.TextEdit_log.insertPlainText(out_s)
+        else:
+            try:
+                self.TextEdit_log.insertPlainText(data.decode('utf-8') + '\r\n')
+            except UnicodeDecodeError:
+                pass
+
+        # self.dll_refer_rec_uart_data(data, num)
+        self.protocol_output_data_signal.emit(data)  # 发送到协议处理信号出去
+        # 滚动到文本末尾
+        if self.checkBox_log_lock.isChecked() is False:
+            scroll_bar = self.TextEdit_log.verticalScrollBar()
+            scroll_bar.setValue(scroll_bar.maximum())
 
 
     def button_click(self): # 端口打开或关闭按键触发函数
@@ -205,7 +247,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                 bytes_data = self.uart_queue.get_nowait()
                 if bytes_data :
                     self.serial.write(bytes_data)
-            except :
+            except:
                 pass
 
             try:
@@ -220,40 +262,38 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                 else :
                     data = self.serial.read(num)
                     num = len(data)
-                    self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End) # 光标置末尾。
-                    if self.checkBox_showtime.isChecked():
-                        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                        # self.TextEdit_log.insertPlainText("[" + timestamp + ",len:" + str(num) + "]")
-                        self.TextEdit_log.insertPlainText(f"<{timestamp} , len:{num}>".format(timestamp, num))
-                    else :
-                        # self.TextEdit_log.insertPlainText("[" + "rec len:" + str(num) + "]")
-                        self.TextEdit_log.insertPlainText(f"< rec len: { num }>".format(num))
 
-                    if self.checkBox_showhex.isChecked():
-                        out_s = ''
-                        for i in range(0, len(data)):
-                            out_s = out_s + '{:02X}'.format(data[i]) + ' '
-                        out_s += '\r\n'
-                        self.TextEdit_log.insertPlainText(out_s)
-                    else :
-                        # 串口接收到的字符串为b'123',要转化成unicode字符串才能输出到窗口中去
+                    self.debug_print_signal.emit(data)
 
-                        self.TextEdit_log.insertPlainText(data.decode('utf-8') + '\r\n')
-                        #self.TextEdit_log.append(data.decode('utf-8'))
+                    # num = len(data)
 
-
-
-                    self.dll_refer_rec_uart_data(data, num)
-
-
-                    # 滚动到文本末尾
-                    if self.checkBox_log_lock.isChecked() is False :
-                        scroll_bar = self.TextEdit_log.verticalScrollBar()
-                        scroll_bar.setValue(scroll_bar.maximum())
+                    # self.TextEdit_log.moveCursor(self.TextEdit_log.textCursor().End) # 光标置末尾。
+                    # if self.checkBox_showtime.isChecked():
+                    #     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    #     # self.TextEdit_log.insertPlainText("[" + timestamp + ",len:" + str(num) + "]")
+                    #     self.TextEdit_log.insertPlainText(f"<{timestamp} , len:{num}>".format(timestamp, num))
+                    # else :
+                    #     # self.TextEdit_log.insertPlainText("[" + "rec len:" + str(num) + "]")
+                    #     self.TextEdit_log.insertPlainText(f"< rec len: { num }>".format(num))
+                    #
+                    # if self.checkBox_showhex.isChecked():
+                    #     out_s = ''
+                    #     for i in range(0, len(data)):
+                    #         out_s = out_s + '{:02X}'.format(data[i]) + ' '
+                    #     out_s += '\r\n'
+                    #     self.TextEdit_log.insertPlainText(out_s)
+                    # else :
+                    #     self.TextEdit_log.insertPlainText(data.decode('utf-8') + '\r\n')
+                    #
+                    # self.dll_refer_rec_uart_data(data, num)
+                    #
+                    # # 滚动到文本末尾
+                    # if self.checkBox_log_lock.isChecked() is False :
+                    #     scroll_bar = self.TextEdit_log.verticalScrollBar()
+                    #     scroll_bar.setValue(scroll_bar.maximum())
             except serial.SerialException:
                 break
-            except UnicodeDecodeError :
-                pass
+
 
 
             

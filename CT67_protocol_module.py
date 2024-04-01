@@ -1,6 +1,8 @@
 import json
+import sys
+import traceback
 
-from PyQt5.QtCore import QEventLoop, QThread
+from PyQt5.QtCore import QEventLoop, QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QMessageBox, \
     QFileDialog, QProgressBar, QDialog, QVBoxLayout
 import struct  # 导入这个模块可以完成 hex格式数据来拼凑出bytes的数据来
@@ -12,6 +14,8 @@ import time
 # ct67_msg_n = 0
 # temp_ui_uart_obj = None
 class CT67_protocol_module(object):
+
+
     def __init__(self, temp_ui_uart_obj):
         self.temp_ui_uart_obj = temp_ui_uart_obj
         self.ct67_msg_n = 0
@@ -26,10 +30,69 @@ class CT67_protocol_module(object):
             ]
         }"""
 
+    def protocol_uart_rec_process(self, data):
+        
+        len1 = len(data)
+
+        if(len1 <= 8):
+            return
+        try:
+
+            if data[0] != 0x5A or data[1] != 0xA5:
+                return
+
+            result = struct.unpack(f">HBBH", data[:6])
+            data_len = result[3]
+            crc_check_result = struct.unpack(f">{data_len + 6}sH", data[:data_len + 8])
+            if crc_check_result[1] != crc_16(0xffff, crc_check_result[0]) :
+                print("校验失败")
+            else:
+                print(f"地址：{result[1]},指令值：{result[2]},数据长度：{result[3]}")
+
+            result = struct.unpack(f">HBBH{data_len}sH", data[:data_len + 8])
+
+            if result[2] == 1:  # 心跳查询
+                print("心跳应答")
+            elif result[2] == 2:  # 租借
+                print("租借应答")
+            elif result[2] == 4:  # 运维出仓
+                print("控制应答")
+            elif result[2] == 5:  # 启动更新 固件更新
+                print("固件更新应答")
+                update_list = [5]
+                self.temp_ui_uart_obj.update_response_signal.emit(update_list)
+            elif result[2] == 6:  # 更新查询
+                print("更新查询应答")
+                data_tuple = struct.unpack(">II", result[4])
+                if data_tuple[0] == 0:
+                    print("===>处理失败")
+                elif data_tuple[0] == 1:
+                    print("===>升级模式中")
+                elif data_tuple[0] == 2:
+                    print("===>正常模式中")
+            elif result[2] == 7:  # 固件发送应答
+                print("固件发送应答")
+                data_tuple = struct.unpack(">BBII", result[4])
+                update_list = [7]
+                update_list.append(data_tuple[2])  # 传输下载了多少byte
+                print(update_list)
+                self.temp_ui_uart_obj.update_response_signal.emit(update_list)
+        except:
+            # 获取当前的堆栈跟踪信息
+            tb = traceback.extract_tb(sys.exc_info()[2])
+            # 输出异常发生的行号
+            print(f"Exception occurred at line {tb[-1].lineno}")
+            print("指令有误,解析异常")
+
+
+
+
+                
+
     def protocol_fuction(self, index, line_edits):
         if index == 0:  # 心跳查询
             self.ct67_detail_cmd(line_edits[0].text())
-            # ui_uart_obj.send_uart_data(1,line_edits[0].text().encode())
+            # ui_uart_obj.send_uart_data(1,line_edits[0].t().encextode())
         elif index == 1:  # 租借
             self.ct67_rent_cmd(line_edits[0].text(), line_edits[1].text())
         elif index == 2:  # 运维出仓

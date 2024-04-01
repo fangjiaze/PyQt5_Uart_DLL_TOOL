@@ -1,3 +1,5 @@
+from PyQt5.QtCore import pyqtSignal
+
 from cp05_protocol_tool import Ui_Form
 from PyQt5 import QtWidgets
 import json
@@ -7,12 +9,15 @@ from CT67_protocol_module import CT67_protocol_module
 
 
 class cp05_protocol_tool_form(QtWidgets.QWidget,Ui_Form) :
+
     def __init__(self, ui_obj, protocol):
         super(cp05_protocol_tool_form, self).__init__()
         self.setupUi(self)
 
         # self.json_str = protocol.json_str
         self.protocol = CT67_protocol_module(ui_obj)  # CT67 协议模块
+
+        ui_obj.protocol_output_data_signal.connect(self.protocol.protocol_uart_rec_process)  # 绑定 串口发送信号到CT67的接收协议模块去处理该数据
         # self.ui_obj = ui_obj # 为了提供串口发送接口给该线程
 
         self.line_edit_map = []

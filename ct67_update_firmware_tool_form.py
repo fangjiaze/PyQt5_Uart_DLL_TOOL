@@ -18,6 +18,13 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
 
     def __init__(self, ui_obj, aims):
         super(ct67_update_firmware_tool_form, self).__init__()
+        self.sent_ts = None
+        self.continue_sent_flag = None
+        self.total_bytes = None
+        self.file_content = None
+        self.ts = None
+        self.bytes_sent_cnt = 0
+        self.state = 0
         self.thread = None
         self.setupUi(self)
         self.ui_obj = ui_obj  # 为了提供串口发送接口给该线程
@@ -45,8 +52,9 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
             self.thread_running = True
             self.sent_file_pushbutton.setText(("停止"))
             self.thread = threading.Thread(target=self.update_firmware_thread)
-            # self.thread.daemon = True
+            self.thread.daemon = True
             self.thread.start()
+            self.ui_obj.temp_ui_uart_obj.update_response_signal.connect(self.recvice_data_slot)
         else:
             self.thread_running = False
             if self.thread:
@@ -54,12 +62,14 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
             self.thread = None
             self.sent_file_pushbutton.setText(("发送固件"))
             self.progressBar.setValue(0)
+            self.ui_obj.temp_ui_uart_obj.update_response_signal.disconnect(self.recvice_data_slot)
 
     def update_firmware_thread(self):
-
-        state = 0
+        self.state = 0
+        self.ts = time.time()
         while self.thread_running:
-            if state == 0:
+            time.sleep(0.05)
+            if self.state == 0:
                 file_path = self.path_lineedit.text()
                 if file_path:
                     try:
@@ -68,33 +78,36 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
                             file.close()
                             self.total_bytes = len(self.file_content)
                             self.bytes_sent_cnt = 0
+                            self.state = 1
                             self.ui_obj.ct67_send_update_start(self.aims, self.total_bytes)
-                            time.sleep(1)
-                            ts = time.time()
-                            state = 1
                     except IOError:
-                        state = 5  # 结束
+                        self.state = 5  # 结束
                 else:
-                    state = 5  # 结束
-            elif state == 1:
-                if (self.bytes_sent_cnt < self.total_bytes) or ((ts - time.time()) > 5):
-                    time.sleep(0.1)
-                    ts = time.time()
+                    self.state = 5  # 结束
+            elif self.state == 1:  # 等待无工作
+                pass
+            elif self.state == 2:
+
+                if (time.time() - self.sent_ts > 1) or self.continue_sent_flag:
+                    time.sleep(0.05)
+                    self.sent_ts = time.time()
+                    self.continue_sent_flag = False
+                    print(f"update==> addr: {self.bytes_sent_cnt}")
                     if self.bytes_sent_cnt + 512 > self.total_bytes:
                         self.ui_obj.ct67_send_update_data(self.aims, self.bytes_sent_cnt, self.file_content[self.bytes_sent_cnt:])
-                        self.bytes_sent_cnt = self.total_bytes
                     else:
                         self.ui_obj.ct67_send_update_data(self.aims, self.bytes_sent_cnt, self.file_content[self.bytes_sent_cnt: self.bytes_sent_cnt + 512])
-                        self.bytes_sent_cnt += 512
-                    progress_value = int((self.bytes_sent_cnt / self.total_bytes) * 100)
-                    self.set_progressBar_value_signal(progress_value)
-
-                    if self.bytes_sent_cnt >= self.total_bytes:
-
-                        state = 2
-            elif state == 2:
+            elif self.state == 4:
                 self.thread_running = False
                 self.reversed_sentfile_pushbutton_signal.emit('哥们,文件发送成功了!')
+            elif self.state == 5:
+                self.thread_running = False
+                self.reversed_sentfile_pushbutton_signal.emit('路径文件异常,发送失败')
+
+            if (time.time() - self.ts) > 5:
+                self.thread_running = False
+                self.reversed_sentfile_pushbutton_signal.emit('发送等待超时')
+
 
 
 
@@ -106,8 +119,28 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
         self.progressBat_signal.emit(value)
 
     def init_sentfile_pushbutton_slot(self, str_data):
-        QMessageBox.information(self, '更新成功', str_data)
+        QMessageBox.information(self, '更新結果', str_data)
         self.sent_file_pushbutton.setText(("发送固件"))
+        self.ui_obj.temp_ui_uart_obj.update_response_signal.connect(self.recvice_data_slot)
+
+
+    def recvice_data_slot(self, update_list):
+        if update_list[0] == 5:  # 开始更新
+            self.state = 2
+            self.bytes_sent_cnt = 0
+            self.ts = time.time()
+            self.sent_ts = time.time()
+        elif update_list[0] == 7:  # 应答接收成功数据了
+
+            if self.bytes_sent_cnt < update_list[1]:
+                self.continue_sent_flag = True
+            self.bytes_sent_cnt = update_list[1]
+            self.ts = time.time()
+            if self.bytes_sent_cnt >= self.total_bytes:
+                self.state = 4
+            progress_value = int((self.bytes_sent_cnt / self.total_bytes) * 100)
+            self.set_progressBar_value_signal(progress_value)
+
 
 # class update_firmware_thread(QThread):
 #     finished_signal = pyqtSignal()  # 定义一个信号，用于通知主线程线程已经完成
