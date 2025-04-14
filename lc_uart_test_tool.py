@@ -413,7 +413,7 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "乐畅串口测试工具"))
+        Form.setWindowTitle(_translate("Form", "CT67-2.0"))
         self.groupBox.setTitle(_translate("Form", "串口配置"))
         self.label.setText(_translate("Form", "COM Port:"))
         self.label_2.setText(_translate("Form", "Baudrate:"))
