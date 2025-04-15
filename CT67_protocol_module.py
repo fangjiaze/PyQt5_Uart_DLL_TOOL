@@ -21,10 +21,11 @@ class CT67_protocol_module(object):
         self.ct67_msg_n = 0
         self.json_str = """{
             "map":[
-                {"n":1,"param1":"机组号","button":"心跳查询"},
+                {"n":1,"param1":"机组号","button":"详情查询"},
                 {"n":2,"param1":"机组号","param2":"仓道口","button":"租借"},
-                {"n":2,"param1":"机组号","param2":"仓道口","button":"运维出仓"},
                 {"n":2,"param1":"机组号","param2":"仓道口","button":"强制出仓"},
+                {"n":1,"param1":"机组号","button":"查询版本及信息"},
+                {"n":1,"param1":"机组号","button":"查询卡扣状态"},
                 {"n":1,"param1":"机组号","button":"重启设备"},
                 {"n":1,"param1":"机组号","button":"固件更新"}
             ]
@@ -38,45 +39,74 @@ class CT67_protocol_module(object):
             return
         try:
 
-            if data[0] != 0x5A or data[1] != 0xA5:
+            if data[0] != 0xA5 or data[-1] != 0x5A:
                 return
+            
+            data_len = (data[1] << 8) + data[2]
 
-            result = struct.unpack(f">HBBH", data[:6])
-            data_len = result[3]
-            crc_check_result = struct.unpack(f">{data_len + 6}sH", data[:data_len + 8])
-            if crc_check_result[1] != crc_16(0xffff, crc_check_result[0]) :
-                print("校验失败")
-            else:
-                print(f"地址：{result[1]},指令值：{result[2]},数据长度：{result[3]}")
+            if data_len != len1 - 2 :
+                print("长度错误")
+                return
+            
+            crc = (data[-3] << 8)+ data[-2]
+            crc_v = crc_16(0xffff, data[1:(len1 - 3)])
 
-            result = struct.unpack(f">HBBH{data_len}sH", data[:data_len + 8])
+            if crc != crc_v :
+
+                print(f"校验失败 : {crc:04X} != {crc_v:04X}")
+                return
+            
+            mm_data_len = data_len - 7
+
+            if mm_data_len == 0 :
+                result = struct.unpack(f">BHBBBHB", data)
+            else :
+                result = struct.unpack(f">BHBBB{mm_data_len}sHB", data)
+
+            
+            
+
+            mm_data = result[5]
+            # result = struct.unpack(f">BHBBB", data[:6])
+            # result = struct.unpack(f">BHBBB", data[:6])
+            # data_len = result[1]
+            # crc_check_result = struct.unpack(f">{data_len + 6}sH", data[:data_len + 8])
+            # if crc_check_result[1] != crc_16(0xffff, crc_check_result[0]) :
+            #     print("校验失败")
+            # else:
+            #     print(f"地址：{result[1]},指令值：{result[2]},数据长度：{result[3]}")
+
+            # result = struct.unpack(f">HBBH{data_len}sH", data[:data_len + 8])
 
             if result[2] == 1:  # 心跳查询
-                print("心跳应答")
+                print(f"查询应答:aims{result[4]}")
             elif result[2] == 2:  # 租借
-                print("租借应答")
-            elif result[2] == 4:  # 运维出仓
-                print("控制应答")
+                print(f"租借应答:aims{result[4]}, 第{mm_data[0]}口,返回结果：{mm_data[1]}, 错误码：{mm_data[2]}")
+            elif result[2] == 2:  # 强制出仓
+                print(f"控制应答:aims{result[4]}, 第{mm_data[0]}口,返回结果：{mm_data[1]}, 错误码：{mm_data[2]}")
             elif result[2] == 5:  # 启动更新 固件更新
                 print("固件更新应答")
                 update_list = [5]
                 self.temp_ui_uart_obj.update_response_signal.emit(update_list)
-            elif result[2] == 6:  # 更新查询
-                print("更新查询应答")
-                data_tuple = struct.unpack(">II", result[4])
-                if data_tuple[0] == 0:
-                    print("===>处理失败")
-                elif data_tuple[0] == 1:
-                    print("===>升级模式中")
-                elif data_tuple[0] == 2:
-                    print("===>正常模式中")
-            elif result[2] == 7:  # 固件发送应答
-                print("固件发送应答")
-                data_tuple = struct.unpack(">BBII", result[4])
+            # elif result[2] == 6:  # 更新查询
+            #     print("更新查询应答")
+            #     data_tuple = struct.unpack(">II", result[4])
+            #     if data_tuple[0] == 0:
+            #         print("===>处理失败")
+            #     elif data_tuple[0] == 1:
+            #         print("===>升级模式中")
+            #     elif data_tuple[0] == 2:
+            #         print("===>正常模式中")
+            elif result[2] == 6:  # 固件发送应答
+                mm_result = struct.unpack(f">II", mm_data)
+                print(f"固件发送应答 : 应答文件大小：{mm_result[0]},应答位置：{mm_result[1]}")
+                # data_tuple = struct.unpack(">BBII", result[4])
                 update_list = [7]
-                update_list.append(data_tuple[2])  # 传输下载了多少byte
+                update_list.append(mm_result[1])  # 传输下载了多少byte
                 print(update_list)
                 self.temp_ui_uart_obj.update_response_signal.emit(update_list)
+            elif result[2] == 7:
+                print("复位")
         except:
             # 获取当前的堆栈跟踪信息
             tb = traceback.extract_tb(sys.exc_info()[2])
@@ -95,26 +125,34 @@ class CT67_protocol_module(object):
             # ui_uart_obj.send_uart_data(1,line_edits[0].t().encextode())
         elif index == 1:  # 租借
             self.ct67_rent_cmd(line_edits[0].text(), line_edits[1].text())
-        elif index == 2:  # 运维出仓
-            self.ct67_yunwei_out_cmd(line_edits[0].text(), line_edits[1].text())
-        elif index == 3:  # 强制出仓
+        elif  index == 2:  # 强制出仓
             self.ct67_force_out_cmd(line_edits[0].text(), line_edits[1].text())
-        elif index == 4:  # 重启设备
+        elif index == 3:  # 查询版本及信息
+            self.ct59_check_version(line_edits[0].text())
+        elif index == 4:  # 查询卡扣状态
+            self.ct59_check_kakou(line_edits[0].text())
+        elif index == 5:  # 重启设备
             self.ct67_reset_device_cmd(line_edits[0].text())
-        elif index == 5:  # 固件更新
+        elif index == 6:  # 固件更新
             self.ct67_update_firmware_cmd(line_edits[0].text())
 
 
     def ct67_sent_cmd(self, aims, cmd, bytes_data, debug_flag):
         len1 = len(bytes_data)
-        aformat = f'>HBBH{len1}sI'  #  > 表示 大端輸入  , B 表示 unsigned char,  H 表示 unsigned short , I 表示 unsigned int , s 表示 string
-        prefix_data = struct.pack(aformat, 0x5aa5, aims, cmd, len1 + 4, bytes_data, self.ct67_msg_n)
-        self.ct67_msg_n += 1
-        crc_data = crc_16(0xffff, prefix_data)
+
+        if len1 == 0 :
+            aformat = f'>BHBBB'
+            prefix_data = struct.pack(aformat, 0xA5, len1 + 7, cmd, aims, 0xFF)
+        else :
+        # aformat = f'>HBBH{len1}sI'  #  > 表示 大端輸入  , B 表示 unsigned char,  H 表示 unsigned short , I 表示 unsigned int , s 表示 string
+            aformat = f'>BHBBB{len1}s'  #  > 表示 大端輸入  , B 表示 unsigned char,  H 表示 unsigned short , I 表示 unsigned int , s 表示 string
+            prefix_data = struct.pack(aformat, 0xA5, len1+7, cmd, aims, 0xFF, bytes_data)
+        # self.ct67_msg_n += 1
+        crc_data = crc_16(0xffff, prefix_data[1:])
 
         len1 = len(prefix_data)
-        aformat = f'>{len1}sH'.format(len1)
-        all_data = struct.pack(aformat, prefix_data, crc_data)
+        aformat = f'>{len1}sHB' #.format(len1)
+        all_data = struct.pack(aformat, prefix_data, crc_data, 0x5A)
         if debug_flag :
             self.temp_ui_uart_obj.send_uart_data(1, all_data)
         else :
@@ -127,7 +165,8 @@ class CT67_protocol_module(object):
         # 判断str_aims是否是数字
         if str_aims.isdigit():
             aims = int(str_aims)
-            self.ct67_sent_cmd(aims, 0x01, b'\x00\x00\x00\x00\x00\x00', 1)
+            # self.ct67_sent_cmd(aims, 0x01, b'\x00\x00\x00\x00\x00\x00', 1)
+            self.ct67_sent_cmd(aims, 0x01, "", 1)  # 1子命令 查询版本
         else :
             error_dialog_run("机组号必须为数字")
 
@@ -136,30 +175,40 @@ class CT67_protocol_module(object):
         if str_aims.isdigit() and str_n.isdigit():
             aims = int(str_aims)
             n = int(str_n)
-            bytes_data = struct.pack('>B10s', n, bytes(10))
+            bytes_data = struct.pack('>B', n)
             self.ct67_sent_cmd(aims, 0x02, bytes_data, 1)
 
 
-    def ct67_yunwei_out_cmd(self, str_aims, str_n):
-        if str_aims.isdigit() and str_n.isdigit():
-            aims = int(str_aims)
-            n = int(str_n)
-            bytes_data = struct.pack('>BB10s', 0x00, n, bytes(10))  # 0子命令 运维出仓
-            self.ct67_sent_cmd(aims, 0x04, bytes_data, 1)
+    # def ct67_yunwei_out_cmd(self, str_aims, str_n):
+    #     if str_aims.isdigit() and str_n.isdigit():
+    #         aims = int(str_aims)
+    #         n = int(str_n)
+    #         bytes_data = struct.pack('>BB10s', 0x00, n, bytes(10))  # 0子命令 运维出仓
+    #         self.ct67_sent_cmd(aims, 0x04, bytes_data, 1)
 
     def ct67_force_out_cmd(self, str_aims, str_n):
         if str_aims.isdigit() and str_n.isdigit():
             aims = int(str_aims)
             n = int(str_n)
-            bytes_data = struct.pack('>BB10s', 0x01, n, bytes(10))  # 1子命令 强制出仓
-            self.ct67_sent_cmd(aims, 0x04, bytes_data, 1)
+            bytes_data = struct.pack('>B', n)  # 1子命令 强制出仓
+            self.ct67_sent_cmd(aims, 0x03, bytes_data, 1)
+
+    def ct59_check_version(self, str_aims) :
+        if str_aims.isdigit() :
+            aims = int(str_aims)
+            self.ct67_sent_cmd(aims, 0x04, "", 1)  # 1子命令 查询版本
+
+    def ct59_check_kakou(self, str_aims):
+        if str_aims.isdigit() :
+            aims = int(str_aims)
+            self.ct67_sent_cmd(aims, 0x08, "", 1)  # 1子命令 查询版本
 
 
     def ct67_reset_device_cmd(self, str_aims):
         if str_aims.isdigit():
             aims = int(str_aims)
-            bytes_data = struct.pack('>BB10s', 0x02, 0x00, bytes(10))  # 2子命令 重启设备
-            self.ct67_sent_cmd(aims, 0x04, bytes_data, 1)
+            # bytes_data = struct.pack('>BB10s', 0x02, 0x00, bytes(10))  # 2子命令 重启设备
+            self.ct67_sent_cmd(aims, 0x07, "", 1)
 
 
 
@@ -181,15 +230,15 @@ class CT67_protocol_module(object):
 
     def ct67_send_update_start(self, aims, file_size):
 
-        bytes_data = struct.pack('>IHH16s', file_size, 0, 0, bytes(16))
+        bytes_data = struct.pack('>BI', 0, file_size)
         self.ct67_sent_cmd(aims, 0x05, bytes_data, 0)
 
 
-    def ct67_send_update_data(self, aims, offset, file_data):
+    def ct67_send_update_data(self, aims, total_bytes, offset, file_data):
         len1 = len(file_data)
-        aformat = f'>II{len1}s'.format(len1)
-        bytes_data = struct.pack(aformat, offset, len1, file_data)
-        self.ct67_sent_cmd(aims, 0x07, bytes_data, 0)
+        aformat = f'>IIH{len1}s'
+        bytes_data = struct.pack(aformat, total_bytes, offset, len1, file_data)
+        self.ct67_sent_cmd(aims, 0x06, bytes_data, 0)
 
 
 class ct67_FileDialog_thread(QThread):

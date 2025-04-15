@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_update_Form(object):
     def setupUi(self, update_Form):
-        update_Form.setObjectName("CT67-固件升級-2.0")
+        update_Form.setObjectName("CT59-HEX-固件升級-1.0")
         update_Form.resize(400, 242)
         self.gridLayoutWidget = QtWidgets.QWidget(update_Form)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 381, 141))

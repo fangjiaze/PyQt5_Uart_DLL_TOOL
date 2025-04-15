@@ -27,4 +27,4 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "CT67-2.0"))
+        Form.setWindowTitle(_translate("Form", "CT59-HEX-1.0"))

@@ -94,10 +94,10 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
                     self.sent_ts = time.time()
                     self.continue_sent_flag = False
                     print(f"update==> addr: {self.bytes_sent_cnt}")
-                    if self.bytes_sent_cnt + 1024 > self.total_bytes:
-                        self.ui_obj.ct67_send_update_data(self.aims, self.bytes_sent_cnt, self.file_content[self.bytes_sent_cnt:])
+                    if self.bytes_sent_cnt + 512 > self.total_bytes:
+                        self.ui_obj.ct67_send_update_data(self.aims, self.total_bytes, self.bytes_sent_cnt, self.file_content[self.bytes_sent_cnt:])
                     else:
-                        self.ui_obj.ct67_send_update_data(self.aims, self.bytes_sent_cnt, self.file_content[self.bytes_sent_cnt: self.bytes_sent_cnt + 1024])
+                        self.ui_obj.ct67_send_update_data(self.aims, self.total_bytes, self.bytes_sent_cnt, self.file_content[self.bytes_sent_cnt: self.bytes_sent_cnt + 512])
             elif self.state == 4:
                 self.thread_running = False
                 self.reversed_sentfile_pushbutton_signal.emit(f'哥们,文件发送成功了!用时：{time.time() - self.all_ts} s')
