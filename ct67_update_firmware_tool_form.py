@@ -16,7 +16,7 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
     progressBat_signal = pyqtSignal(object)  # 更新进度条信号,因为发送任务时在另一个线程,另一个线程通过发送信号的方式到窗体进行更新进度条。
     reversed_sentfile_pushbutton_signal = pyqtSignal(object)  # 发送结束时,需要改回发送按键的初始值,同时报更新成功
 
-    def __init__(self, ui_obj, aims):
+    def __init__(self, ui_obj, aims, f_type, version):
         super(ct67_update_firmware_tool_form, self).__init__()
         self.sent_ts = None
         self.continue_sent_flag = None
@@ -29,6 +29,8 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
         self.setupUi(self)
         self.ui_obj = ui_obj  # 为了提供串口发送接口给该线程
         self.aims = aims
+        self.f_type = f_type
+        self.version = version
         self.thread_running = False
 
         self.select_file_pushbutton.clicked.connect(self.select_file_callback)
@@ -80,7 +82,7 @@ class ct67_update_firmware_tool_form(QtWidgets.QWidget, Ui_update_Form):
                             self.total_bytes = len(self.file_content)
                             self.bytes_sent_cnt = 0
                             self.state = 1
-                            self.ui_obj.ct67_send_update_start(self.aims, self.total_bytes)
+                            self.ui_obj.ct67_send_update_start(self.aims, self.total_bytes, self.f_type, self.version)
                     except IOError:
                         self.state = 5  # 结束
                 else:

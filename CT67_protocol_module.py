@@ -27,7 +27,7 @@ class CT67_protocol_module(object):
                 {"n":1,"param1":"机组号","button":"查询版本及信息"},
                 {"n":1,"param1":"机组号","button":"查询卡扣状态"},
                 {"n":1,"param1":"机组号","button":"重启设备"},
-                {"n":1,"param1":"机组号","button":"固件更新"}
+                {"n":3,"param1":"机组号","param2":"类型（0:机柜/1.2:充电宝）","param3":"充电宝软件版本","button":"固件更新"}
             ]
         }"""
 
@@ -134,7 +134,7 @@ class CT67_protocol_module(object):
         elif index == 5:  # 重启设备
             self.ct67_reset_device_cmd(line_edits[0].text())
         elif index == 6:  # 固件更新
-            self.ct67_update_firmware_cmd(line_edits[0].text())
+            self.ct67_update_firmware_cmd(line_edits[0].text(), line_edits[1].text(), line_edits[2].text())
 
 
     def ct67_sent_cmd(self, aims, cmd, bytes_data, debug_flag):
@@ -213,24 +213,32 @@ class CT67_protocol_module(object):
 
 
 
-    def ct67_update_firmware_cmd(self, str_aims):
+    def ct67_update_firmware_cmd(self, str_aims, f_type, version):
 
         if str_aims.isdigit() is False:
             error_dialog_run("机组号必须为数字")
             return
 
+        int_f_type = 0
+        if f_type.isdigit() is True:
+            int_f_type = int(f_type)
+
+        int_version = 0
+        if version.isdigit() is True:
+            int_version = int(version)
+
         # thread = ct67_FileDialog_thread(int(str_aims))
         # thread.start()
 
-        self.my2_pyqt_form = ct67_update_firmware_tool_form(self, int(str_aims))
+        self.my2_pyqt_form = ct67_update_firmware_tool_form(self, int(str_aims), int_f_type, int_version)
         self.my2_pyqt_form.show()
 
 
 
 
-    def ct67_send_update_start(self, aims, file_size):
+    def ct67_send_update_start(self, aims, file_size, type, version):
 
-        bytes_data = struct.pack('>BI', 0, file_size)
+        bytes_data = struct.pack('>BIB', type, file_size, version)
         self.ct67_sent_cmd(aims, 0x05, bytes_data, 0)
 
 
