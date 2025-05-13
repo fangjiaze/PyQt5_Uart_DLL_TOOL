@@ -216,40 +216,22 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
         # 设置状态为已打开
         self.waveform_is_open = True
-        self.pushButton_2.setText("关闭波形")
-
-        # 创建示波器窗口
-        self.osc = waveform_work.WaveformOscilloscope(filename='lc_waveform.csv', default_points=100)
-        self.osc.load_data()
-
-         # 启动独立线程运行 matplotlib 显示界面
-        self.waveform_thread = threading.Thread(target=self.osc.start, daemon=True)
-        self.waveform_thread.start()
-
-        print("📊 波形窗口已启动")
-        print("🔒 按钮已禁用")
-
-        # 禁用按钮（或隐藏）
+        # self.pushButton_2.setText("关闭波形")
         self.pushButton_2.setEnabled(False)
 
-        # 启动监控线程是否结束
-        threading.Thread(target=self.monitor_waveform_thread, daemon=True).start()
+        # 创建并显示新的 PyQt 内嵌波形控件
+        from PyQtWaveformWidget import PyQtWaveformWidget
+        self.waveform_widget = PyQtWaveformWidget(filename='lc_waveform.csv', default_points=100)
+        self.waveform_widget.closed.connect(self.on_waveform_closed)
+        self.waveform_widget.show()
 
-        # 可选：注册关闭回调函数
-        # plt.figure(self.osc.fig.number)
-        # plt.get_current_fig_manager().window.setAttribute(Qt.WA_DeleteOnClose, False)
-        # plt.get_current_fig_manager().window.closeEvent = self.on_waveform_window_close
+        # 绑定关闭事件
+        # self.waveform_widget.destroyed.connect(lambda obj=None: self.on_waveform_closed())
 
-    def monitor_waveform_thread(self):
-        """
-        监控示波器线程是否结束（即窗口是否关闭）
-        """
-        if self.waveform_thread:
-            self.waveform_thread.join()  # 等待线程结束
-
-        print("📊 波形窗口已关闭")
+    def on_waveform_closed(self):
+        print("📊 波形窗口已销毁")
         self.waveform_is_open = False
-        self.pushButton_2.setText("打开波形")
+        # self.pushButton_2.setText("打开波形")
         self.pushButton_2.setEnabled(True)
 
 
