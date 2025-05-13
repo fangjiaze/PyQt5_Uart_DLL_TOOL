@@ -4,6 +4,8 @@ import time
 import threading
 import serial.tools.list_ports
 # import fjz_timer
+import waveform_work
+import test_csv_simulator
 
 
 
@@ -28,9 +30,13 @@ if __name__ == '__main__' :
     #     print(func.__name__)
     # dll.HelloWorld()
 
+    # 启动测试数据生成线程
+    # test_thread = test_csv_simulator.start_test_data_thread()
 
-    # print(crc_16(0xffff, b'\x01\x02\x07'))
-
+    
+    # osc = waveform_work.WaveformOscilloscope(default_points=100)
+    # osc.load_data()
+    # osc.start()
 
     app = QtWidgets.QApplication(sys.argv)
     my_pyqt_form = MyPyQT_Form()

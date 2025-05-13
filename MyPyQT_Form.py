@@ -21,6 +21,7 @@ from cp05_protocol_tool_form import cp05_protocol_tool_form
 from User_ErrorDialog import error_dialog_run
 
 from PyQt5.QtWidgets import QMessageBox
+import waveform_work
 
 com_config_parity_dict = {
     'None' : 'N',
@@ -64,7 +65,7 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.pushButton.clicked.connect(self.button_click)
         self.fjz_timer_obj = fjz_timer.fjz_timer(1000, self.update_com_list, -1)
         self.fjz_timer_obj.start()
-        self.comboBox_2.addItems(['115200', '9600', '4800'])
+        self.comboBox_2.addItems(['921600', '460800', '230400', '115200', '9600', '4800'])
         self.comboBox_3.addItems(['1', '1.5', '2'])
         self.comboBox_4.addItems(['None', 'Even', 'Odd'])
         self.comboBox_5.addItems(['8', '7', '6', '5'])
@@ -72,8 +73,9 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
         self.pushButton_clear_log.clicked.connect(self.clear_log)
         self.pushButton_sent_data.clicked.connect(self.send_data)
-        self.pushButton_select_dll.clicked.connect(self.select_dll)
-        self.pushButton_open_dll.clicked.connect(self.open_dll_pro)
+        self.pushButton_2.clicked.connect(self.open_or_off_waveform)
+        # self.pushButton_select_dll.clicked.connect(self.select_dll)
+        # self.pushButton_open_dll.clicked.connect(self.open_dll_pro)
 
 
         self.pushButton_cmd_sent.clicked.connect(lambda: self.sent_uart_cmd(self.cmd_edit, self.checkBox_cmd_hex_flag, self.checkBox_cmd_enter_flag))
@@ -110,6 +112,9 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
         self.refer_uart_data = b''
 
         self.uart_queue = queue.Queue()
+
+
+        self.waveform_is_open = False
 
         import CT67_protocol_module
 
@@ -201,6 +206,53 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
                 self.comboBox_5.setEnabled(False)
 
 
+    def open_or_off_waveform(self) :
+        """
+        打开或关闭波形显示窗口
+        """
+        if self.waveform_is_open:
+            print("⚠️ 波形已打开，禁止重复点击")
+            return
+
+        # 设置状态为已打开
+        self.waveform_is_open = True
+        self.pushButton_2.setText("关闭波形")
+
+        # 创建示波器窗口
+        self.osc = waveform_work.WaveformOscilloscope(filename='lc_waveform.csv', default_points=100)
+        self.osc.load_data()
+
+         # 启动独立线程运行 matplotlib 显示界面
+        self.waveform_thread = threading.Thread(target=self.osc.start, daemon=True)
+        self.waveform_thread.start()
+
+        print("📊 波形窗口已启动")
+        print("🔒 按钮已禁用")
+
+        # 禁用按钮（或隐藏）
+        self.pushButton_2.setEnabled(False)
+
+        # 启动监控线程是否结束
+        threading.Thread(target=self.monitor_waveform_thread, daemon=True).start()
+
+        # 可选：注册关闭回调函数
+        # plt.figure(self.osc.fig.number)
+        # plt.get_current_fig_manager().window.setAttribute(Qt.WA_DeleteOnClose, False)
+        # plt.get_current_fig_manager().window.closeEvent = self.on_waveform_window_close
+
+    def monitor_waveform_thread(self):
+        """
+        监控示波器线程是否结束（即窗口是否关闭）
+        """
+        if self.waveform_thread:
+            self.waveform_thread.join()  # 等待线程结束
+
+        print("📊 波形窗口已关闭")
+        self.waveform_is_open = False
+        self.pushButton_2.setText("打开波形")
+        self.pushButton_2.setEnabled(True)
+
+
 
     def update_com_list(self): # 更新串口端口定时器函数
         if self.port_state is False:
@@ -242,11 +294,13 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
     def receive_data(self): # 接收处理
         num = 0
         while self.port_state:
-            time.sleep(0.01)
+            
             try:
                 bytes_data = self.uart_queue.get_nowait()
                 if bytes_data :
                     self.serial.write(bytes_data)
+                else :
+                    time.sleep(0.001)
             except:
                 pass
 
@@ -254,11 +308,11 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
 
                 temp_num = self.serial.inWaiting()
                 if temp_num == 0 :
+                    time.sleep(0.001)
                     continue
 
                 if num != temp_num :
                     num = temp_num
-                    # time.sleep(0.01)
                 else :
                     data = self.serial.read(num)
                     num = len(data)
