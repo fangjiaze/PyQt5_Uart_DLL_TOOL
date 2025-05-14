@@ -13,6 +13,7 @@ import threading
 from waveform_work import WaveformOscilloscope  # 保留原有数据处理逻辑
 from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import pyqtSignal
+import test_csv_simulator
 
 class PyQtWaveformWidget(QtWidgets.QWidget):
     closed = pyqtSignal()  # 自定义关闭信号
@@ -31,6 +32,8 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
         self.last_pos = None
         self.lock = threading.Lock()
         self._last_move_time = 0  # 添加节流时间戳
+        self.current_xdata = None
+        self.current_ydata = None
 
         # 使用 QTimer 替代 FuncAnimation
         # self.refresh_timer = QTimer(self)
@@ -94,6 +97,10 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
         # 启动后台线程监听文件变化
         self.file_monitor_thread = threading.Thread(target=self.monitor_file, daemon=True)
         self.file_monitor_thread.start()
+
+
+        # 模拟测试
+        test_thread = test_csv_simulator.start_test_data_thread()
 
     def load_data(self):
         """从CSV文件中加载数据，增加对空白/未完成文件的保护"""
@@ -248,8 +255,10 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
             return
 
         try:
+
             # 获取当前绘图区域的 xdata（可能为 None）
             xdata = int(event.xdata)
+            self.current_xdata = int(event.xdata)
             if xdata is None or not (0 <= xdata < len(self.data)):
                 self.clear_hover_indicator()
                 return
@@ -262,6 +271,7 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
 
                 # 安全获取 ydata
                 ydata = self.data[xdata]
+
 
             # 绘制十字线和文本提示
             self.clear_hover_indicator()
@@ -278,6 +288,7 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
             )
 
             self.fig.canvas.draw_idle()
+            
 
         except Exception as e:
             self.clear_hover_indicator()
@@ -311,66 +322,112 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
 
     def on_mouse_press(self, event):
         """鼠标左键按下触发拖动"""
-        if event.button == 1:
-            self.dragging = True
-            self.start_mouse_x = event.x
+        if event.button == 1:  # 左键按下
+            # self.current_xdata = self.start_mouse_xdata
+            self.start_mouse_xdata = self.current_xdata  # ✅ 使用数据坐标
             with self.lock:
-                self.start_index = self.index
+                self.press_start_index = self.index
+            print(f"start:{self.index}, start_mouse_xdata:{self.start_mouse_xdata}")
+            self.dragging = True
 
     def on_mouse_release(self, event):
         """释放鼠标停止拖动"""
         self.dragging = False
         self.last_pos = None
 
+
+    def check_dragging_move(self):
+        if not self.dragging :
+            return
+        
+        current_time = time.time()
+        if (current_time - self._last_move_time) < 0.05:
+            return
+        
+        self._last_move_time = current_time
+        
+        total_data_len = len(self.data)
+        if total_data_len == 0 or total_data_len < self.points:
+            return
+        try:
+            dx_data = self.current_xdata - self.start_mouse_xdata
+
+            if dx_data == 0 :
+                print("对齐")
+                return
+
+            # 数据偏移转换为 index 偏移
+            new_index = int(max(0, min(
+                self.index - dx_data,
+                total_data_len - self.points
+            )))
+            self.index = new_index
+            print(f"Moved index to {self.index}, self.start_mouse_xdata:{self.start_mouse_xdata},current_xdata:{self.current_xdata}")
+            self.update_axis()
+            
+        except Exception as e:
+            print(f"⚠️ 鼠标移动处理异常: {e}")
+
+        
+        
+        
+
     def on_mouse_move(self, event):
-        """鼠标移动拖动索引，支持连续平滑拖动"""
-        if self.dragging and event.x is not None and hasattr(self, 'start_mouse_x'):
 
-            # ✅ 安全判断
-            if not (hasattr(event, 'x') and self.ax.bbox and self.ax.get_window_extent().width > 0):
-                return
 
-            canvas_width = self.ax.get_window_extent().width
-            if canvas_width <= 0:
-                return
+        # if event.inaxes != self.ax:
+        #     return 
+        
+        # if hasattr(event, 'xdata'):
+        #     self.current_xdata = int(event.xdata)
+        # if hasattr(event, 'ydata'):
+        #     self.current_ydata = int(event.ydata)
 
-            try:
-                with self.lock:
-                    total_data_len = len(self.data)
-                    if total_data_len == 0 or total_data_len < self.points:
-                        return
-                    if self.index + self.points < total_data_len :
-                        self.auto_follow = False
-                        print("追尾关闭")
+        
+        
+        # print(f"current_xdata:{self.current_xdata}")
 
-                dx_pixels = event.x - self.start_mouse_x
 
-                print(f"dx_pixels={dx_pixels}, points={self.points}, data_len={total_data_len}")
+        
 
-                # 🔽 添加防抖动逻辑
-                if abs(dx_pixels) < 3:
-                    return
+        
 
-                pixels_per_point = canvas_width / self.points
-                dx_points = int(dx_pixels / pixels_per_point)
+        if not self.dragging or not hasattr(self, 'start_mouse_xdata'):
+            return
+        
+        self.auto_follow = False
+        
+        # current_time = time.time()
+        # if hasattr(self, '_last_move_time') and (current_time - self._last_move_time) < 0.01:
+        #     return
+        # self._last_move_time = current_time
 
-                # ✅ 公式：新索引 = 上次的数据起点 - dx_points
-                new_index = max(0, self.start_index - dx_points)
-                new_index = min(new_index, total_data_len - self.points)
+        # try:
+            
 
-                self.index = new_index
+        #     # 计算鼠标移动对应的数据偏移量
+        #     dx_data = self.current_xdata - self.start_mouse_xdata
 
-                # ✅ 更新 start_mouse_x 和 start_index，实现连续拖动
-                self.start_mouse_x = event.x
-                self.start_index = self.index  # 新增：重置起点为当前索引
+        #     with self.lock:
+        #         total_data_len = len(self.data)
+        #         if total_data_len == 0 or total_data_len < self.points:
+        #             return
 
-                print(f"Moved index to {self.index}")
-                print(f"data_len={total_data_len}, points={self.points}, dx_pixels={dx_pixels}, dx_points={dx_points}")
+        #         # 数据偏移转换为 index 偏移
+        #         new_index = int(max(0, min(
+        #             self.press_start_index - dx_data,
+        #             total_data_len - self.points
+        #         )))
+        #         # self.start_mouse_xdata = current_xdata  # ✅重新更新起始位置数据坐标
 
-                self.update_axis()
+        #     self.index = new_index
+        #     self.auto_follow = False
+        #     print(f"Moved index to {self.index}, self.start_mouse_xdata:{self.start_mouse_xdata},current_xdata:{self.current_xdata}")
 
-            except Exception as e:
-                print(f"⚠️ 鼠标移动处理异常: {e}")
+        #     self.update_axis()
+
+        # except Exception as e:
+        #     print(f"⚠️ 鼠标移动处理异常: {e}")
     
     def monitor_file(self):
         last_size = 0
@@ -404,7 +461,32 @@ class PyQtWaveformWidget(QtWidgets.QWidget):
                             self.index = new_index
                             print(f"🚀 自动追尾跳转到最后: index={self.index}, points={self.points} data_len={total_data_len}")
                             self.update_axis()
+                        
                                 # self.fig.canvas.draw_idle()  # 强制刷新画面
+                    # elif self.dragging is True :
+                    #     dx_data = self.current_xdata - self.start_mouse_xdata
+                    #     print(f"---")
+                    #     if dx_data != 0 :
+                    #         with self.lock:
+                    #             total_data_len = len(self.data)
+                    #             if total_data_len == 0 or total_data_len < self.points:
+                    #                 return
+
+                    #             # 数据偏移转换为 index 偏移
+                    #             new_index = int(max(0, min(
+                    #                 self.press_start_index - dx_data,
+                    #                 total_data_len - self.points
+                    #             )))
+                    #             # self.start_mouse_xdata = current_xdata  # ✅重新更新起始位置数据坐标
+
+                    #         self.index = new_index
+                    #         # self.auto_follow = False
+                    #         print(f"Moved index to {self.index}, self.start_mouse_xdata:{self.start_mouse_xdata},current_xdata:{self.current_xdata}")
+
+                    #         self.update_axis()
+                if self.auto_follow is False :
+                    self.check_dragging_move()
+                    # time.sleep(0.1)
 
                 last_size = current_size
 

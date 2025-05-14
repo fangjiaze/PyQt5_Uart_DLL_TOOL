@@ -140,6 +140,10 @@ class MyPyQT_Form(QtWidgets.QWidget,Ui_Form):
             self.sys_fjs_cfg_close_pro()
             if self.my2_pyqt_form is not None :
                 self.my2_pyqt_form.close()
+
+            if self.waveform_is_open is True :
+                self.waveform_widget.close_requested()
+            
         else:
             event.ignore()
 
